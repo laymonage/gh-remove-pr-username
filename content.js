@@ -16,8 +16,10 @@
   }
 
   function isHeadBranchCopyButton(button) {
-    return button
-      .getAttribute('aria-labelledby')
+    const labelledBy = button.getAttribute('aria-labelledby');
+    if (!labelledBy) return false;
+
+    return labelledBy
       .split(/\s+/)
       .filter(Boolean)
       .some((id) => document.getElementById(id)?.getAttribute('aria-label') === COPY_LABEL);
@@ -27,7 +29,9 @@
     const copyControl = event.target.closest('button[aria-labelledby]');
     if (!copyControl) return;
     if (!isHeadBranchCopyButton(copyControl)) return;
-    const branchName = getNormalizedBranchName(copyControl.parentElement.querySelector(BRANCH_LINK_SELECTOR));
+    const branchLink = copyControl.parentElement.querySelector(BRANCH_LINK_SELECTOR);
+    if (!branchLink) return;
+    const branchName = getNormalizedBranchName(branchLink);
 
     event.preventDefault();
     event.stopImmediatePropagation();
