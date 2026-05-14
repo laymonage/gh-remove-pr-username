@@ -1,5 +1,7 @@
 (function () {
   const COPY_LABEL = 'Copy head branch name to clipboard';
+  const COPY_CONTROL_SELECTOR = `button[aria-label="${COPY_LABEL}"], clipboard-copy[aria-label="${COPY_LABEL}"]`;
+  const BRANCH_LINK_SELECTOR = 'a[href*="/tree/"][class*="BranchName"]';
 
   function branchNameFromHref(href) {
     if (!href) return null;
@@ -46,38 +48,33 @@
     }
   }
 
-  function updateCopyControlForBranch(branchLink, branchName) {
-    let scope = branchLink.parentElement;
+  function findBranchLinkInAncestors(startElement) {
+    let scope = startElement;
     let depth = 0;
     const maxDepth = 8;
 
     while (scope && scope !== document.body && depth < maxDepth) {
-      const copyControl = scope.querySelector(
-        `button[aria-label="${COPY_LABEL}"], clipboard-copy[aria-label="${COPY_LABEL}"]`
-      );
-
-      if (copyControl) {
-        updateCopyControlValue(copyControl, branchName);
-        return;
+      const branchLink = scope.querySelector(BRANCH_LINK_SELECTOR);
+      if (branchLink) {
+        return branchLink;
       }
 
       scope = scope.parentElement;
       depth += 1;
     }
 
-    const globalCopyControl = document.querySelector(
-      `button[aria-label="${COPY_LABEL}"], clipboard-copy[aria-label="${COPY_LABEL}"]`
-    );
-
-    if (globalCopyControl) {
-      updateCopyControlValue(globalCopyControl, branchName);
-    }
+    return null;
   }
 
   function updateBranchDisplayAndCopyValue() {
-    const branchLinks = document.querySelectorAll('a[href*="/tree/"]');
+    const copyControls = document.querySelectorAll(COPY_CONTROL_SELECTOR);
+    const updatedBranchLinks = new Set();
 
-    for (const branchLink of branchLinks) {
+    for (const copyControl of copyControls) {
+      const branchLink = findBranchLinkInAncestors(copyControl);
+      if (!branchLink) continue;
+
+      updatedBranchLinks.add(branchLink);
       const branchName = getNormalizedBranchName(branchLink);
       if (!branchName) continue;
 
@@ -85,11 +82,36 @@
         branchLink.textContent = branchName;
       }
 
-      updateCopyControlForBranch(branchLink, branchName);
+      updateCopyControlValue(copyControl, branchName);
+    }
+
+    const branchLinks = document.querySelectorAll(BRANCH_LINK_SELECTOR);
+
+    for (const branchLink of branchLinks) {
+      if (updatedBranchLinks.has(branchLink)) continue;
+
+      const branchName = getNormalizedBranchName(branchLink);
+      if (!branchName) continue;
+
+      if (branchLink.textContent && branchLink.textContent.trim() !== branchName) {
+        branchLink.textContent = branchName;
+      }
     }
   }
 
-  const observer = new MutationObserver(updateBranchDisplayAndCopyValue);
+  let updateQueued = false;
+
+  function scheduleUpdate() {
+    if (updateQueued) return;
+
+    updateQueued = true;
+    requestAnimationFrame(() => {
+      updateQueued = false;
+      updateBranchDisplayAndCopyValue();
+    });
+  }
+
+  const observer = new MutationObserver(scheduleUpdate);
 
   function start() {
     updateBranchDisplayAndCopyValue();
@@ -105,5 +127,5 @@
     start();
   }
 
-  document.addEventListener('turbo:load', updateBranchDisplayAndCopyValue);
+  document.addEventListener('turbo:load', scheduleUpdate);
 })();

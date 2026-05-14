@@ -16,7 +16,7 @@
   ],
   "browser_specific_settings": {
     "gecko": {
-      "id": "gh-remove-pr-username@laymonage"
+      "id": "gh-remove-pr-username@example.com"
     }
   }
 }
