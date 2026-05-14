@@ -72,20 +72,19 @@
   function getHeadBranchCopyControls() {
     const controls = new Set(document.querySelectorAll(`clipboard-copy[aria-label="${COPY_LABEL}"]`));
 
-    const labelElements = document.querySelectorAll(`[aria-label="${COPY_LABEL}"][id]`);
-    for (const labelElement of labelElements) {
-      const { id } = labelElement;
+    const copyLabelIds = new Set(
+      Array.from(document.querySelectorAll(`[aria-label="${COPY_LABEL}"][id]`), (labelElement) => labelElement.id)
+    );
 
-      for (const button of document.querySelectorAll('button[aria-labelledby]')) {
-        const labelIds = button
-          .getAttribute('aria-labelledby')
-          .split(/\s+/)
-          .filter(Boolean);
+    for (const button of document.querySelectorAll('button[aria-labelledby]')) {
+      const labelIds = button
+        .getAttribute('aria-labelledby')
+        .split(/\s+/)
+        .filter(Boolean);
 
-        if (!labelIds.includes(id)) continue;
+      if (!labelIds.some((id) => copyLabelIds.has(id))) continue;
 
-        controls.add(button);
-      }
+      controls.add(button);
     }
 
     return controls;
@@ -172,7 +171,6 @@
     if (!branchName) return;
 
     event.preventDefault();
-    event.stopPropagation();
     event.stopImmediatePropagation();
 
     writeBranchToClipboard(branchName);
