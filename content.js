@@ -3,7 +3,7 @@
   const BRANCH_LINK_SELECTOR = 'a[href*="/tree/"][class*="BranchName"]';
 
   function getNormalizedBranchName(branchLink) {
-    const text = branchLink.textContent.trim();
+    const text = (branchLink.textContent || '').trim();
     const colonIndex = text.indexOf(':');
     return colonIndex === -1 ? text : text.slice(colonIndex + 1).trim();
   }
