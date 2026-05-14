@@ -1,6 +1,6 @@
 (function () {
   const COPY_LABEL = 'Copy head branch name to clipboard';
-  const COPY_CONTROL_SELECTOR = `button[aria-label="${COPY_LABEL}"], clipboard-copy[aria-label="${COPY_LABEL}"]`;
+  const COPY_CONTROL_SELECTOR = 'button[aria-label], button[aria-labelledby], clipboard-copy[aria-label]';
   const BRANCH_LINK_SELECTOR = 'a[href*="/tree/"][class*="BranchName"]';
 
   function branchNameFromHref(href) {
@@ -48,6 +48,38 @@
     }
   }
 
+  function isHeadBranchCopyControl(control) {
+    if (control.getAttribute('aria-label') === COPY_LABEL) {
+      return true;
+    }
+
+    const labelledBy = control.getAttribute('aria-labelledby');
+    if (!labelledBy) return false;
+
+    return labelledBy
+      .split(/\s+/)
+      .filter(Boolean)
+      .some((id) => {
+        const labelElement = document.getElementById(id);
+        if (!labelElement) return false;
+
+        return (
+          labelElement.getAttribute('aria-label') === COPY_LABEL ||
+          labelElement.textContent?.trim() === COPY_LABEL
+        );
+      });
+  }
+
+  function canWriteClipboard() {
+    return typeof navigator.clipboard?.writeText === 'function';
+  }
+
+  function writeBranchToClipboard(branchName) {
+    if (!canWriteClipboard()) return;
+
+    navigator.clipboard.writeText(branchName).catch(() => {});
+  }
+
   function updateBranchLinkText(branchLink, branchName) {
     if (branchLink.textContent?.trim() !== branchName) {
       branchLink.textContent = branchName;
@@ -77,6 +109,8 @@
     const updatedBranchLinks = new Set();
 
     for (const copyControl of copyControls) {
+      if (!isHeadBranchCopyControl(copyControl)) continue;
+
       const branchLink = findBranchLinkInAncestors(copyControl);
       if (!branchLink) continue;
 
@@ -99,6 +133,29 @@
 
       updateBranchLinkText(branchLink, branchName);
     }
+  }
+
+  function handleCopyButtonClick(event) {
+    const eventTarget = event.target;
+    if (!(eventTarget instanceof Element)) return;
+
+    const copyControl = eventTarget.closest('button, clipboard-copy');
+    if (!copyControl || !isHeadBranchCopyControl(copyControl)) return;
+
+    if (!canWriteClipboard()) return;
+
+    const branchLink = findBranchLinkInAncestors(copyControl);
+    if (!branchLink) return;
+
+    const branchName = getNormalizedBranchName(branchLink);
+    if (!branchName) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+
+    writeBranchToClipboard(branchName);
+    updateCopyControlValue(copyControl, branchName);
   }
 
   let updateQueued = false;
@@ -130,4 +187,5 @@
   }
 
   document.addEventListener('turbo:load', scheduleUpdate);
+  document.addEventListener('click', handleCopyButtonClick, true);
 })();
