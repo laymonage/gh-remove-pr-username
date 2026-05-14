@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "GitHub Remove PR Username Prefix",
+  "version": "1.0.0",
+  "description": "Removes the username: prefix from fork branch names in GitHub pull request headers.",
+  "content_scripts": [
+    {
+      "matches": [
+        "https://github.com/*/*/pull/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "gh-remove-pr-username@laymonage"
+    }
+  }
+}
