@@ -1,6 +1,5 @@
 (function () {
   const COPY_LABEL = 'Copy head branch name to clipboard';
-  const COPY_CONTROL_SELECTOR = 'button[aria-label], button[aria-labelledby], clipboard-copy[aria-label]';
   const BRANCH_LINK_SELECTOR = 'a[href*="/tree/"][class*="BranchName"]';
 
   function branchNameFromHref(href) {
@@ -70,6 +69,22 @@
       });
   }
 
+  function getHeadBranchCopyControls() {
+    const controls = new Set(document.querySelectorAll(`clipboard-copy[aria-label="${COPY_LABEL}"]`));
+
+    const labelElements = document.querySelectorAll(`[aria-label="${COPY_LABEL}"][id]`);
+    for (const labelElement of labelElements) {
+      const { id } = labelElement;
+      if (!id) continue;
+
+      for (const button of document.querySelectorAll(`button[aria-labelledby*="${id}"]`)) {
+        controls.add(button);
+      }
+    }
+
+    return controls;
+  }
+
   function canWriteClipboard() {
     return typeof navigator.clipboard?.writeText === 'function';
   }
@@ -105,7 +120,7 @@
   }
 
   function updateBranchDisplayAndCopyValue() {
-    const copyControls = document.querySelectorAll(COPY_CONTROL_SELECTOR);
+    const copyControls = getHeadBranchCopyControls();
     const updatedBranchLinks = new Set();
 
     for (const copyControl of copyControls) {
