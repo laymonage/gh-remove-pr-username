@@ -48,6 +48,12 @@
     }
   }
 
+  function updateBranchLinkText(branchLink, branchName) {
+    if (branchLink.textContent?.trim() !== branchName) {
+      branchLink.textContent = branchName;
+    }
+  }
+
   function findBranchLinkInAncestors(startElement) {
     let scope = startElement;
     let depth = 0;
@@ -78,9 +84,7 @@
       const branchName = getNormalizedBranchName(branchLink);
       if (!branchName) continue;
 
-      if (branchLink.textContent && branchLink.textContent.trim() !== branchName) {
-        branchLink.textContent = branchName;
-      }
+      updateBranchLinkText(branchLink, branchName);
 
       updateCopyControlValue(copyControl, branchName);
     }
@@ -93,9 +97,7 @@
       const branchName = getNormalizedBranchName(branchLink);
       if (!branchName) continue;
 
-      if (branchLink.textContent && branchLink.textContent.trim() !== branchName) {
-        branchLink.textContent = branchName;
-      }
+      updateBranchLinkText(branchLink, branchName);
     }
   }
 
