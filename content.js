@@ -66,6 +66,8 @@
   }
 
   function isHeadBranchCopyButton(button) {
+    if (!(button instanceof Element)) return false;
+
     const labelledBy = button.getAttribute('aria-labelledby');
     if (!labelledBy) return false;
 
@@ -80,6 +82,7 @@
     if (!(eventTarget instanceof Element)) return;
 
     const copyControl = eventTarget.closest('button[aria-labelledby]');
+    if (copyControl && !copyControl.querySelector('svg.octicon-copy')) return;
     if (!copyControl || !isHeadBranchCopyButton(copyControl)) return;
     if (typeof navigator.clipboard?.writeText !== 'function') return;
 
