@@ -31,77 +31,6 @@
     return fromText || null;
   }
 
-  function updateCopyControlValue(control, branchName) {
-    if (!branchName) return;
-
-    if ('value' in control) {
-      control.value = branchName;
-    }
-
-    if (control.hasAttribute('value')) {
-      control.setAttribute('value', branchName);
-    }
-
-    if (control.hasAttribute('data-clipboard-text')) {
-      control.setAttribute('data-clipboard-text', branchName);
-    }
-  }
-
-  function isHeadBranchCopyControl(control) {
-    if (control.getAttribute('aria-label') === COPY_LABEL) {
-      return true;
-    }
-
-    const labelledBy = control.getAttribute('aria-labelledby');
-    if (!labelledBy) return false;
-
-    return labelledBy
-      .split(/\s+/)
-      .filter(Boolean)
-      .some((id) => {
-        const labelElement = document.getElementById(id);
-        if (!labelElement) return false;
-
-        return (
-          labelElement.getAttribute('aria-label') === COPY_LABEL ||
-          labelElement.textContent?.trim() === COPY_LABEL
-        );
-      });
-  }
-
-  function getHeadBranchCopyControls() {
-    const controls = new Set(document.querySelectorAll(`clipboard-copy[aria-label="${COPY_LABEL}"]`));
-
-    const copyLabelIds = new Set(
-      Array.from(document.querySelectorAll(`[aria-label="${COPY_LABEL}"][id]`), (labelElement) => labelElement.id)
-    );
-
-    for (const button of document.querySelectorAll('button[aria-labelledby]')) {
-      const labelIds = button
-        .getAttribute('aria-labelledby')
-        .split(/\s+/)
-        .filter(Boolean);
-
-      if (!labelIds.some((id) => copyLabelIds.has(id))) continue;
-
-      controls.add(button);
-    }
-
-    return controls;
-  }
-
-  function canWriteClipboard() {
-    return typeof navigator.clipboard?.writeText === 'function';
-  }
-
-  function writeBranchToClipboard(branchName) {
-    if (!canWriteClipboard()) return;
-
-    navigator.clipboard.writeText(branchName).catch((error) => {
-      console.debug('gh-remove-pr-username: failed to write clipboard text', error);
-    });
-  }
-
   function updateBranchLinkText(branchLink, branchName) {
     if (branchLink.textContent?.trim() !== branchName) {
       branchLink.textContent = branchName;
@@ -126,28 +55,9 @@
     return null;
   }
 
-  function updateBranchDisplayAndCopyValue() {
-    const copyControls = getHeadBranchCopyControls();
-    const updatedBranchLinks = new Set();
-
-    for (const copyControl of copyControls) {
-      const branchLink = findBranchLinkInAncestors(copyControl);
-      if (!branchLink) continue;
-
-      updatedBranchLinks.add(branchLink);
-      const branchName = getNormalizedBranchName(branchLink);
-      if (!branchName) continue;
-
-      updateBranchLinkText(branchLink, branchName);
-
-      updateCopyControlValue(copyControl, branchName);
-    }
-
+  function updateBranchDisplay() {
     const branchLinks = document.querySelectorAll(BRANCH_LINK_SELECTOR);
-
     for (const branchLink of branchLinks) {
-      if (updatedBranchLinks.has(branchLink)) continue;
-
       const branchName = getNormalizedBranchName(branchLink);
       if (!branchName) continue;
 
@@ -155,14 +65,23 @@
     }
   }
 
+  function isHeadBranchCopyButton(button) {
+    const labelledBy = button.getAttribute('aria-labelledby');
+    if (!labelledBy) return false;
+
+    return labelledBy
+      .split(/\s+/)
+      .filter(Boolean)
+      .some((id) => document.getElementById(id)?.getAttribute('aria-label') === COPY_LABEL);
+  }
+
   function handleCopyButtonClick(event) {
     const eventTarget = event.target;
     if (!(eventTarget instanceof Element)) return;
 
-    const copyControl = eventTarget.closest('button, clipboard-copy');
-    if (!copyControl || !isHeadBranchCopyControl(copyControl)) return;
-
-    if (!canWriteClipboard()) return;
+    const copyControl = eventTarget.closest('button[aria-labelledby]');
+    if (!copyControl || !isHeadBranchCopyButton(copyControl)) return;
+    if (typeof navigator.clipboard?.writeText !== 'function') return;
 
     const branchLink = findBranchLinkInAncestors(copyControl);
     if (!branchLink) return;
@@ -172,31 +91,13 @@
 
     event.preventDefault();
     event.stopImmediatePropagation();
-
-    writeBranchToClipboard(branchName);
-    updateCopyControlValue(copyControl, branchName);
-  }
-
-  let updateQueued = false;
-
-  function scheduleUpdate() {
-    if (updateQueued) return;
-
-    updateQueued = true;
-    requestAnimationFrame(() => {
-      updateQueued = false;
-      updateBranchDisplayAndCopyValue();
+    navigator.clipboard.writeText(branchName).catch((error) => {
+      console.debug('gh-remove-pr-username: failed to write clipboard text', { branchName, error });
     });
   }
-
-  const observer = new MutationObserver(scheduleUpdate);
 
   function start() {
-    updateBranchDisplayAndCopyValue();
-    observer.observe(document.documentElement, {
-      childList: true,
-      subtree: true
-    });
+    updateBranchDisplay();
   }
 
   if (document.readyState === 'loading') {
@@ -205,6 +106,6 @@
     start();
   }
 
-  document.addEventListener('turbo:load', scheduleUpdate);
+  document.addEventListener('turbo:load', start);
   document.addEventListener('click', handleCopyButtonClick, true);
 })();
