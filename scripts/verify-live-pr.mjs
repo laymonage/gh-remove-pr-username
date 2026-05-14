@@ -23,8 +23,8 @@ const browser = await puppeteer.launch({
 const page = await browser.newPage();
 
 try {
-  await page.goto(PR_URL, { waitUntil: 'domcontentloaded', timeout: 120000 });
-  await page.waitForSelector('button[aria-labelledby]', { timeout: 120000 });
+  await page.goto(PR_URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
+  await page.waitForSelector('button[aria-labelledby]', { timeout: 60000 });
 
   await page.evaluate(() => {
     window.__copiedText = null;
