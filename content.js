@@ -19,7 +19,7 @@
 
   function stripOwnerPrefix(text) {
     const match = /^([^:\s]+):(.*)$/.exec(text.trim());
-    return match ? match[2] : null;
+    return match ? match[2].trim() : null;
   }
 
   function getNormalizedBranchName(branchLink) {
@@ -48,8 +48,10 @@
 
   function updateCopyControlForBranch(branchLink, branchName) {
     let scope = branchLink.parentElement;
+    let depth = 0;
+    const maxDepth = 8;
 
-    while (scope && scope !== document.body) {
+    while (scope && scope !== document.body && depth < maxDepth) {
       const copyControl = scope.querySelector(
         `button[aria-label="${COPY_LABEL}"], clipboard-copy[aria-label="${COPY_LABEL}"]`
       );
@@ -60,6 +62,7 @@
       }
 
       scope = scope.parentElement;
+      depth += 1;
     }
 
     const globalCopyControl = document.querySelector(
@@ -92,8 +95,7 @@
     updateBranchDisplayAndCopyValue();
     observer.observe(document.documentElement, {
       childList: true,
-      subtree: true,
-      characterData: true
+      subtree: true
     });
   }
 
