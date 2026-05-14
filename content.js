@@ -83,7 +83,7 @@
 
     const copyControl = eventTarget.closest('button[aria-labelledby]');
     if (!copyControl) return;
-    if (!isHeadBranchCopyButton(copyControl) || !copyControl.querySelector('svg.octicon-copy')) return;
+    if (!isHeadBranchCopyButton(copyControl)) return;
     if (typeof navigator.clipboard?.writeText !== 'function') return;
 
     const branchLink = findBranchLinkInAncestors(copyControl);
@@ -95,7 +95,7 @@
     event.preventDefault();
     event.stopImmediatePropagation();
     navigator.clipboard.writeText(branchName).catch((error) => {
-      console.debug('gh-remove-pr-username: failed to write clipboard text', branchName, error);
+      console.debug('gh-remove-pr-username: failed to write clipboard text', error);
     });
   }
 
