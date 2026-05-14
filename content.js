@@ -82,8 +82,8 @@
     if (!(eventTarget instanceof Element)) return;
 
     const copyControl = eventTarget.closest('button[aria-labelledby]');
-    if (copyControl && !copyControl.querySelector('svg.octicon-copy')) return;
-    if (!copyControl || !isHeadBranchCopyButton(copyControl)) return;
+    if (!copyControl) return;
+    if (!copyControl.querySelector('svg.octicon-copy') || !isHeadBranchCopyButton(copyControl)) return;
     if (typeof navigator.clipboard?.writeText !== 'function') return;
 
     const branchLink = findBranchLinkInAncestors(copyControl);
