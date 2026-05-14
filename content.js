@@ -76,7 +76,14 @@
     for (const labelElement of labelElements) {
       const { id } = labelElement;
 
-      for (const button of document.querySelectorAll(`button[aria-labelledby*="${id}"]`)) {
+      for (const button of document.querySelectorAll('button[aria-labelledby]')) {
+        const labelIds = button
+          .getAttribute('aria-labelledby')
+          .split(/\s+/)
+          .filter(Boolean);
+
+        if (!labelIds.includes(id)) continue;
+
         controls.add(button);
       }
     }
@@ -91,7 +98,9 @@
   function writeBranchToClipboard(branchName) {
     if (!canWriteClipboard()) return;
 
-    navigator.clipboard.writeText(branchName).catch(() => {});
+    navigator.clipboard.writeText(branchName).catch((error) => {
+      console.debug('gh-remove-pr-username: failed to write clipboard text', error);
+    });
   }
 
   function updateBranchLinkText(branchLink, branchName) {
